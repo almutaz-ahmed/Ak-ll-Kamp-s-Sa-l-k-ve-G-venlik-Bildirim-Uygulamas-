@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "957474812100",
+    "project_id": "aksgbu",
+    "storage_bucket": "aksgbu.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:957474812100:android:95cee5ee86b02facee5991",
+        "android_client_info": {
+          "package_name": "com.example.aksgbu"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxzq0eC5sLZHOzEf26mJtXthUL7y_88cs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:957474812100:android:7c467b4c0d066be4ee5991",
+        "android_client_info": {
+          "package_name": "com.example.myapplication"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxzq0eC5sLZHOzEf26mJtXthUL7y_88cs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
