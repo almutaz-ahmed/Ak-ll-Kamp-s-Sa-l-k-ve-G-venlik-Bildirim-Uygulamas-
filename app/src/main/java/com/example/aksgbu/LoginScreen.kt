@@ -39,18 +39,18 @@ fun LoginScreen(
 
     // Renk Geçişi (Gradient)
     val colorStops = arrayOf(
-        0.0f to Color(0xFF6200EA),
-        1.0f to Color(0xFFC51162)
+        0.0f to Color(0xFF6200EA),  //mor  -->
+        1.0f to Color(0xFFC51162)   // --> pempe
     )
     val gradient = Brush.verticalGradient(colorStops = colorStops)
 
-    Box(
+    Box(  // ana kontyner
         modifier = Modifier
             .fillMaxSize()
             .background(gradient),
         contentAlignment = Alignment.Center
     ) {
-        Column(
+        Column( // elemanlar dikey
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp),
