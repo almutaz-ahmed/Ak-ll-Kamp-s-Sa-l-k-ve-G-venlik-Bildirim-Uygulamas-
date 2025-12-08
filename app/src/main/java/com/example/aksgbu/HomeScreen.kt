@@ -1,13 +1,14 @@
 package com.example.aksgbu
 
-
-
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -15,15 +16,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    userRole: String, // Admin mi User mı olduğu bilgisi buraya gelecek
-    onLogout: () -> Unit // Çıkış yapma fonksiyonu
+    userRole: String,
+    onLogout: () -> Unit,
+    onNavigateToAddAnnouncement: () -> Unit
 ) {
     val auth = FirebaseAuth.getInstance()
+    val firestore = FirebaseFirestore.getInstance()
     val currentUser = auth.currentUser
+
+    // Duyuruları tutacak listemiz
+    var announcementList by remember { mutableStateOf<List<Announcement>>(emptyList()) }
+
+    // Ekran açılınca verileri çek (Realtime - Canlı)
+    LaunchedEffect(Unit) {
+        firestore.collection("announcements")
+            .orderBy("date", Query.Direction.DESCENDING) // En yenisi en üstte
+            .addSnapshotListener { snapshot, _ ->
+                if (snapshot != null) {
+                    val list = snapshot.documents.map { doc ->
+                        Announcement(
+                            id = doc.id,
+                            title = doc.getString("title") ?: "",
+                            content = doc.getString("content") ?: "",
+                            date = doc.getTimestamp("date")
+                        )
+                    }
+                    announcementList = list
+                }
+            }
+    }
 
     Scaffold(
         topBar = {
@@ -34,10 +63,9 @@ fun HomeScreen(
                     titleContentColor = MaterialTheme.colorScheme.primary
                 ),
                 actions = {
-                    // Çıkış Yap Butonu (Sağ Üstte)
                     IconButton(onClick = {
-                        auth.signOut() // Firebase'den çıkış yap
-                        onLogout()     // Giriş ekranına yönlendir
+                        auth.signOut()
+                        onLogout()
                     }) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Çıkış Yap")
                     }
@@ -50,63 +78,87 @@ fun HomeScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Profil İkonu
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                modifier = Modifier.size(100.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
+            // Profil Kısmı
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(50.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Column {
+                    Text(text = "Merhaba,", fontSize = 16.sp, color = Color.Gray)
+                    Text(text = currentUser?.email ?: "", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                }
+            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
-            Text(text = "Merhaba!", fontSize = 28.sp, fontWeight = FontWeight.Bold)
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(text = "Giriş Yapan Hesap:", fontSize = 14.sp, color = Color.Gray)
-            Text(text = currentUser?.email ?: "Bilinmiyor", fontSize = 18.sp, fontWeight = FontWeight.Medium)
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            // ROL KONTROLÜ: Eğer Admin ise bunu göster
+            // ROL KONTROLÜ
             if (userRole == "Admin") {
+                // Admin Paneli Butonu
                 Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFD7D7)), // Kırmızımsı
-                    modifier = Modifier.fillMaxWidth().height(150.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFFD7D7)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .clickable { onNavigateToAddAnnouncement() },
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = "YÖNETİCİ PANELİ", style = MaterialTheme.typography.titleLarge, color = Color.Red, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Duyuru eklemek için tıklayın (Yakında)", style = MaterialTheme.typography.bodyMedium)
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(text = "+ YENİ DUYURU EKLE", color = Color.Red, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
                 }
             } else {
-                // User (Öğrenci) ise bunu göster
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE7FFD7)), // Yeşilimsi
-                    modifier = Modifier.fillMaxWidth().height(150.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(16.dp),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(text = "ÖĞRENCİ PANELİ", style = MaterialTheme.typography.titleLarge, color = Color(0xFF2E7D32), fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(text = "Duyuruları görüntülemek için bekleyin.", style = MaterialTheme.typography.bodyMedium)
-                    }
+                // Öğrenci Başlığı
+                Text(text = "📢 GÜNCEL DUYURULAR", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // DUYURU LİSTESİ (HERKES GÖREBİLİR)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(announcementList) { announcement ->
+                    AnnouncementItem(announcement)
                 }
             }
         }
     }
 }
+
+// Duyuru Kartı Tasarımı
+@Composable
+fun AnnouncementItem(announcement: Announcement) {
+    // Tarihi güzel formatta göstermek için
+    val formattedDate = remember(announcement.date) {
+        val sdf = SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault())
+        announcement.date?.toDate()?.let { sdf.format(it) } ?: "Tarih Yok"
+    }
+
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(text = announcement.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = announcement.content, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(text = formattedDate, style = MaterialTheme.typography.bodySmall, color = Color.Gray, modifier = Modifier.align(Alignment.End))
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
